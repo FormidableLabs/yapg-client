@@ -1,4 +1,4 @@
-# yapg-client
+[![yapg-client — Formidable, We build the modern web](https://raw.githubusercontent.com/FormidableLabs/yapg-client/main/yapg-client-Hero.png)](https://formidable.com/open-source/)
 
 **Yet Another Postgres Client**
 
