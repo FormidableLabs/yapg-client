@@ -24,11 +24,18 @@ export class PgQueryRunner {
     }
   }
 
-  async query<R, V>(text: string, values?: V[], client?: pg.PoolClient): Promise<R[]> {
+  async query<R extends pg.QueryResultRow, V = unknown>(
+    text: string,
+    values?: V[],
+    client?: pg.PoolClient,
+  ): Promise<R[]> {
     return (await this.queries<R, V>([{ text, values }], client))[0];
   }
 
-  async queries<R, V>(queries: Consumable<{ text: string; values?: V[] }>, client?: pg.PoolClient): Promise<R[][]> {
+  async queries<R extends pg.QueryResultRow, V = unknown>(
+    queries: Consumable<{ text: string; values?: V[] }>,
+    client?: pg.PoolClient,
+  ): Promise<R[][]> {
     const autoConnect: boolean = !client;
     client ||= await this.pool.connect();
 
