@@ -39,7 +39,7 @@ export default class YapgClient extends PgQueryRunner.Service {
     }
   }
 
-  async jsonStream(text: string, client?: pg.PoolClient, options?: TransformOptions): Promise<Transform> {
+  async jsonStream(text: string, client?: pg.PoolClient, options?: TransformOptions): Promise<PgCsvToJSON.Service> {
     const autoConnect: boolean = !client;
     const readClient: pg.PoolClient = client || (await this.pool.connect());
 

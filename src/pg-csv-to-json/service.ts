@@ -7,7 +7,7 @@ export enum PgNumber {
   regproc = 'regproc',
   oid = 'oid',
   real = 'real',
-  double = 'double precision',
+  'double precision' = 'double precision',
   money = 'money',
   numeric = 'numeric',
   regprocedure = 'regprocedure',
@@ -24,6 +24,27 @@ export enum PgNumber {
 }
 
 export class PgCsvToJSON extends Transform {
+  static escapeSpecialCharacter(byte: '\b' | '\t' | '\n' | '\f' | '\r' | '"' | '/' | '\\'): string {
+    switch (byte) {
+      case '\b':
+        return '\\b';
+      case '\t':
+        return '\\t';
+      case '\n':
+        return '\\n';
+      case '\f':
+        return '\\f';
+      case '\r':
+        return '\\r';
+      case '"':
+        return '\\"';
+      case '/':
+        return '\\/';
+      case '\\':
+        return '\\\\';
+    }
+  }
+
   static isBoolean(type: string): type is 'boolean' {
     return type === 'boolean';
   }
@@ -105,7 +126,7 @@ export class PgCsvToJSON extends Transform {
     callback(null, output);
   }
 
-  async analyzeStatement() {
+  analyzeStatement() {
     for (const [index, [, type]] of this.columns.entries()) {
       if (PgCsvToJSON.isBoolean(type)) this.booleanColumns[index] = true;
       else if (PgCsvToJSON.isString(type)) this.stringColumns[index] = true;
@@ -113,9 +134,7 @@ export class PgCsvToJSON extends Transform {
   }
 
   onBoolean(byte: 'f' | 't'): string {
-    this.withinColumn = true;
-    if (this.isBooleanColumn) return `${byte === 't'}`;
-    return byte;
+    return this.onByte(this.isBooleanColumn ? `${byte === 't'}` : byte);
   }
 
   onByte(byte: string): string {
@@ -126,28 +145,25 @@ export class PgCsvToJSON extends Transform {
   }
 
   onComma(byte: ','): string {
-    this.withinColumn = true;
-    if (this.isWithinQuotes) return byte;
-    return this.onNewColumn();
+    return this.isWithinQuotes ? this.onByte(byte) : this.onNewColumn();
   }
 
   onNewColumn(): string {
     let output: string = '';
     if (this.isEmpty || this.lastByte === ',') output = 'null';
-    if (this.isValueQuoted || this.isStringColumn) output = '"';
-    this.columnIndex += 1;
+    else if (this.isValueQuoted || this.isStringColumn) output = '"';
+    this.columnIndex++;
     this.quoteCount = 0;
     this.withinColumn = false;
     return output;
   }
 
   onNewLine(byte: '\n'): string {
-    if (this.isWithinQuotes) return this.onSpecialCharacter(byte);
-    return this.onNewRow();
+    return this.isWithinQuotes ? this.onSpecialCharacter(byte) : this.onNewRow();
   }
 
   onNewRow(): string {
-    let output: string = this.onNewColumn();
+    const output: string = this.onNewColumn();
     this.columnIndex = 0;
     return `${output}}`;
   }
@@ -156,32 +172,13 @@ export class PgCsvToJSON extends Transform {
     let output: string = '';
     if (!this.withinColumn) output = byte;
     else if (this.lastByte === byte && this.isQuoteClosed) output = this.onSpecialCharacter(byte);
-    this.quoteCount += 1;
+    this.quoteCount++;
     this.withinColumn = true;
     return output;
   }
 
   onSpecialCharacter(byte: '\b' | '\t' | '\n' | '\f' | '\r' | '"' | '/' | '\\'): string {
-    this.withinColumn = true;
-
-    switch (byte) {
-      case '\b':
-        return '\\b';
-      case '\t':
-        return '\\t';
-      case '\n':
-        return '\\n';
-      case '\f':
-        return '\\f';
-      case '\r':
-        return '\\r';
-      case '"':
-        return '\\"';
-      case '/':
-        return '\\/';
-      case '\\':
-        return '\\\\';
-    }
+    return this.onByte(PgCsvToJSON.escapeSpecialCharacter(byte));
   }
 
   transformByte(byte: string): string {
