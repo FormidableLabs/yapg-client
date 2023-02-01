@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch File w/ ts-node",
+      "protocol": "inspector",
+      "args": ["${relativeFile}"],
+      "cwd": "${workspaceRoot}",
+      "envFile": "${workspaceRoot}/.env",
+      "runtimeArgs": ["-r", "ts-node/register"],
+      "outputCapture": "std",
+      "internalConsoleOptions": "openOnSessionStart",
+      "skipFiles": ["${workspaceRoot}/node_modules/**/*", "<node_internals>/**/*"],
+      "windows": {
+        "skipFiles": ["C:\\**\\node_modules\\**\\*", "<node_internals>/**/*"]
+      }
+    }
+  ]
+}
